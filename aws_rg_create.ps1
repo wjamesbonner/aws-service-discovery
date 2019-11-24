@@ -82,7 +82,7 @@ if ($help) {
 	Write-Host "    Default: "
     Write-Host "    Alias: q"
 	Write-Host "    Example: ./aws_rg_create.ps1 -query `"{`"ResourceTypeFilters`":[`"AWS::EC2::Instance`",`"AWS::ECS::Cluster`",`"AWS::RDS::DBInstance`",`"AWS::S3::Bucket`"],`"TagFilters`":[{`"Key`":`"created-by`",`"Values`":[`"aws-rg-create`"]}]}`""
-    Write-Host "    Example: ./aws_rg_create.ps1 -q `"`""
+    Write-Host "    Example: ./aws_rg_create.ps1 -q `"{`"ResourceTypeFilters`":[`"AWS::EC2::Instance`",`"AWS::ECS::Cluster`",`"AWS::RDS::DBInstance`",`"AWS::S3::Bucket`"],`"TagFilters`":[{`"Key`":`"created-by`",`"Values`":[`"aws-rg-create`"]}]}`""
 	return
 }
 
@@ -91,7 +91,7 @@ if (Get-Module -ListAvailable -Name AWS.Tools.ResourceGroups) {
     Import-Module AWS.Tools.ResourceGroups
 } 
 else {
-    Write-Host "Module Import-Module AWS.Tools.ResourceGroups has not been installed.  Please run this libraries one-time-setup script."
+    Write-Host "Module Import-Module AWS.Tools.ResourceGroups has not been installed.  Please run this libraries setup script."
     return;
 }
 
