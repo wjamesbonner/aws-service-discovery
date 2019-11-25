@@ -58,6 +58,17 @@ if (!(Get-Module -ListAvailable -Name AWS.Tools.ResourceGroups) -or $force) {
     $changesMade = $true
 }
 
+# Check for modules required by this library
+if (!(Get-Module -ListAvailable -Name AWS.Tools.EC2) -or $force) {
+    if($force) {
+        Install-Module -Name AWS.Tools.EC2 -AllowClobber
+    } else {
+        Install-Module -Name AWS.Tools.EC2
+    }
+
+    $changesMade = $true
+}
+
 if($changesMade) {
     Write-Host "Libraries successfully installed!"
 }else {
