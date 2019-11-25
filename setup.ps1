@@ -69,6 +69,39 @@ if (!(Get-Module -ListAvailable -Name AWS.Tools.EC2) -or $force) {
     $changesMade = $true
 }
 
+# Check for modules required by this library
+if (!(Get-Module -ListAvailable -Name AWS.Tools.ECS) -or $force) {
+    if($force) {
+        Install-Module -Name AWS.Tools.ECS -AllowClobber
+    } else {
+        Install-Module -Name AWS.Tools.ECS
+    }
+
+    $changesMade = $true
+}
+
+# Check for modules required by this library
+if (!(Get-Module -ListAvailable -Name AWS.Tools.RDS) -or $force) {
+    if($force) {
+        Install-Module -Name AWS.Tools.RDS -AllowClobber
+    } else {
+        Install-Module -Name AWS.Tools.RDS
+    }
+
+    $changesMade = $true
+}
+
+# Check for modules required by this library
+if (!(Get-Module -ListAvailable -Name AWS.Tools.S3) -or $force) {
+    if($force) {
+        Install-Module -Name AWS.Tools.S3 -AllowClobber
+    } else {
+        Install-Module -Name AWS.Tools.S3
+    }
+
+    $changesMade = $true
+}
+
 if($changesMade) {
     Write-Host "Libraries successfully installed!"
 }else {

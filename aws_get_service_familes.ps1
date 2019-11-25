@@ -53,7 +53,34 @@ if (Get-Module -ListAvailable -Name AWS.Tools.EC2) {
     Import-Module AWS.Tools.EC2
 } 
 else {
-    Write-Host "Module Import-Module AWS.Tools.ResourceGroups has not been installed.  Please run this libraries setup script."
+    Write-Host "Module Import-Module AWS.Tools.EC2 has not been installed.  Please run this libraries setup script."
+    return;
+}
+
+# Check for necessary module
+if (Get-Module -ListAvailable -Name AWS.Tools.ECS) {
+    Import-Module AWS.Tools.ECS
+} 
+else {
+    Write-Host "Module Import-Module AWS.Tools.ECS has not been installed.  Please run this libraries setup script."
+    return;
+}
+
+# Check for necessary module
+if (Get-Module -ListAvailable -Name AWS.Tools.RDS) {
+    Import-Module AWS.Tools.RDS
+} 
+else {
+    Write-Host "Module Import-Module AWS.Tools.RDS has not been installed.  Please run this libraries setup script."
+    return;
+}
+
+# Check for necessary module
+if (Get-Module -ListAvailable -Name AWS.Tools.S3) {
+    Import-Module AWS.Tools.S3
+} 
+else {
+    Write-Host "Module Import-Module AWS.Tools.S3 has not been installed.  Please run this libraries setup script."
     return;
 }
 
@@ -79,8 +106,45 @@ $ecsProperties = @{Name="AWS::ECS::Cluster"; Command=""}
 $rdsProperties = @{Name="AWS::RDS::DBInstance"; Command=""}
 $s3Properties = @{Name="AWS::S3::Bucket"; Command=""}
 
-foreach($resource in $resources) {
+$families = @()
 
+foreach($resource in $resources.ResourceIdentifiers) {
+
+    if($resource.ResourceType -eq "AWS::EC2::Instance") {
+        $result = Get-EC2Instance -InstanceId $resource.ResourceArn.Split("/")[1]
+        $tags = $result.Instances[0].Tags
+        
+        foreach($tag in $tags) {
+            if($tag.Key -eq $tagName) {
+                $families = $families + $tag.Value
+            }
+        }
+    } elseif($resource.ResourceType -eq "AWS::ECS::Cluster") {
+        $tags = Get-ECSTagsForResource -ResourceArn $resource.ResourceArn
+        
+        foreach($tag in $tags) {
+            if($tag.Key -eq $tagName) {
+                $families = $families + $tag.Value
+            }
+        }
+    } elseif($resource.ResourceType -eq "AWS::RDS::DBInstance") {
+        $tags = Get-RDSTagForResource -ResourceName $resource.ResourceArn
+        
+        foreach($tag in $tags) {
+            if($tag.Key -eq $tagName) {
+                $families = $families + $tag.Value
+            }
+        }
+    } elseif($resource.ResourceType -eq "AWS::S3::Bucket") {
+        $tags = Get-S3BucketTagging -BucketName $resource.ResourceArn.Split(":")[$resource.ResourceArn.Split(":").Count-1]
+        
+        foreach($tag in $tags) {
+            if($tag.Key -eq $tagName) {
+                $families = $families + $tag.Value
+            }
+        }
+    }
 }
 
-#New-Object -TypeName Amazon.ResourceGroups.Model.ResourceQuery
+$families | Sort-Object | Get-Unique
+
