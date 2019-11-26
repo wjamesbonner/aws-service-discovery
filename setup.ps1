@@ -14,12 +14,11 @@ if ($help) {
 	Write-Host "Parameters:"
 	Write-Host ""
 	Write-Host "force"
-	Write-Host "    Force the reinstallation of libraries."
+	Write-Host "    Force the reinstallation and upgrade of modules."
 	Write-Host "    Default: true"
     Write-Host "    Alias: f"
 	Write-Host "    Example: ./setup.ps1 -force"
     Write-Host "    Example: ./setup.ps1 -f"
-	
 	return
 }
 
@@ -34,12 +33,16 @@ if(!($currentPrincipal.IsInRole([Security.Principal.WindowsBuiltInRole]::Adminis
     return
 }
 
+# Track whether any modules are installed
 $changesMade = $false
+
+# Update modules and cleanup old versions to minimize warnings during installation of any missing modules.
+Update-AWSToolsModule -CleanUp -AllowClobber -Force -Confirm
 
 # Check for modules required by this library
 if (!(Get-Module -ListAvailable -Name AWS.Tools.Installer) -or $force) {
     if($force) {
-        Install-Module -Name AWS.Tools.Installer -AllowClobber
+        Install-Module -Name AWS.Tools.Installer -AllowClobber -Force -Confirm
     } else {
         Install-Module -Name AWS.Tools.Installer
     }
@@ -48,9 +51,20 @@ if (!(Get-Module -ListAvailable -Name AWS.Tools.Installer) -or $force) {
 }
 
 # Check for modules required by this library
+if (!(Get-Module -ListAvailable -Name AWS.Tools.Common) -or $force) {
+    if($force) {
+        Install-Module -Name AWS.Tools.Common -AllowClobber -Force -Confirm
+    } else {
+        Install-Module -Name AWS.Tools.Common
+    }
+
+    $changesMade = $true
+}
+
+# Check for modules required by this library
 if (!(Get-Module -ListAvailable -Name AWS.Tools.ResourceGroups) -or $force) {
     if($force) {
-        Install-Module -Name AWS.Tools.ResourceGroups -AllowClobber
+        Install-Module -Name AWS.Tools.ResourceGroups -AllowClobber -Force -Confirm
     } else {
         Install-Module -Name AWS.Tools.ResourceGroups
     }
@@ -61,7 +75,7 @@ if (!(Get-Module -ListAvailable -Name AWS.Tools.ResourceGroups) -or $force) {
 # Check for modules required by this library
 if (!(Get-Module -ListAvailable -Name AWS.Tools.EC2) -or $force) {
     if($force) {
-        Install-Module -Name AWS.Tools.EC2 -AllowClobber
+        Install-Module -Name AWS.Tools.EC2 -AllowClobber -Force -Confirm
     } else {
         Install-Module -Name AWS.Tools.EC2
     }
@@ -72,7 +86,7 @@ if (!(Get-Module -ListAvailable -Name AWS.Tools.EC2) -or $force) {
 # Check for modules required by this library
 if (!(Get-Module -ListAvailable -Name AWS.Tools.ECS) -or $force) {
     if($force) {
-        Install-Module -Name AWS.Tools.ECS -AllowClobber
+        Install-Module -Name AWS.Tools.ECS -AllowClobber -Force -Confirm
     } else {
         Install-Module -Name AWS.Tools.ECS
     }
@@ -81,9 +95,20 @@ if (!(Get-Module -ListAvailable -Name AWS.Tools.ECS) -or $force) {
 }
 
 # Check for modules required by this library
+if (!(Get-Module -ListAvailable -Name AWS.Tools.ECR) -or $force) {
+    if($force) {
+        Install-Module -Name AWS.Tools.ECR -AllowClobber -Force -Confirm
+    } else {
+        Install-Module -Name AWS.Tools.ECR
+    }
+
+    $changesMade = $true
+}
+
+# Check for modules required by this library
 if (!(Get-Module -ListAvailable -Name AWS.Tools.RDS) -or $force) {
     if($force) {
-        Install-Module -Name AWS.Tools.RDS -AllowClobber
+        Install-Module -Name AWS.Tools.RDS -AllowClobber -Force -Confirm
     } else {
         Install-Module -Name AWS.Tools.RDS
     }
@@ -94,7 +119,7 @@ if (!(Get-Module -ListAvailable -Name AWS.Tools.RDS) -or $force) {
 # Check for modules required by this library
 if (!(Get-Module -ListAvailable -Name AWS.Tools.S3) -or $force) {
     if($force) {
-        Install-Module -Name AWS.Tools.S3 -AllowClobber
+        Install-Module -Name AWS.Tools.S3 -AllowClobber -Force -Confirm
     } else {
         Install-Module -Name AWS.Tools.S3
     }
@@ -102,8 +127,19 @@ if (!(Get-Module -ListAvailable -Name AWS.Tools.S3) -or $force) {
     $changesMade = $true
 }
 
+# Check for modules required by this library
+if (!(Get-Module -ListAvailable -Name AWS.Tools.ElasticFileSystem) -or $force) {
+    if($force) {
+        Install-Module -Name AWS.Tools.ElasticFileSystem -AllowClobber -Force -Confirm
+    } else {
+        Install-Module -Name AWS.Tools.ElasticFileSystem
+    }
+
+    $changesMade = $true
+}
+
 if($changesMade) {
-    Write-Host "Libraries successfully installed!"
+    Write-Host "Modules successfully installed and updated."
 }else {
-    Write-Host "All libraries are already installed, did you mean to run with -f ?"
+    Write-Host "Existing modules updated, no missing modules detected."
 }

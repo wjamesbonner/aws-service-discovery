@@ -1,39 +1,34 @@
-﻿param(
-    [Alias("r")]
-    [string] $resourceGroupName = "service-resources",
+param(
+    [Alias("s")]
+    [string] $serviceFamilyName = "",
 
     [Alias("t")]
-    [string] $tagName = "service-family",
+    [string] $tagName = "service-id",
 
     [Alias("h")]
     [switch] $help = $false
 )
 
 if ($help) {
-	Write-Host "aws_get_service_familes retrieves the list of service families running in your configured AWS region."
+	Write-Host "aws_get_services retrieves the list of service families running in your configured AWS region."
 	Write-Host "Prerequisites: Powershell, AWS CLI, AWS.Tools.ResourceGroups"
 	Write-Host ""
 	Write-Host "Parameters:"
     Write-Host ""
-	Write-Host "resourceGroupName"
-	Write-Host "    The name of the resource group that encompasses the AWS resources tagged with service details."
-	Write-Host "    Default: service-resources"
-    Write-Host "    Alias: r"
-	Write-Host "    Example: ./aws_get_service_familes.ps1 -resourceGroupName `"service-resources`""
-    Write-Host "    Example: ./aws_get_service_familes.ps1 -r `"service-resources`""
+	Write-Host "serviceFamilyName"
+	Write-Host "    The name of the service family to query."
+	Write-Host "    Default: "
+    Write-Host "    Alias: s"
+	Write-Host "    Example: ./aws_get_services.ps1 -serviceFamilyName `"wp-containers`""
+    Write-Host "    Example: ./aws_get_services.ps1 -s `"wp-containers`""
 
     Write-Host ""
 	Write-Host "tagName"
-	Write-Host "    The name of the tag used to identify service familes."
-	Write-Host "    Default: service-family"
+	Write-Host "    The name of the tag used to identify services."
+	Write-Host ("    Default: {0}" -f $tagName)
     Write-Host "    Alias: t"
-	Write-Host "    Example: ./aws_get_service_familes.ps1 -tagName service-family"
-    Write-Host "    Example: ./aws_get_service_familes.ps1 -t service-family"
-
-    Write-Host ""
-    Write-Host "Supported resources:"
-
-
+	Write-Host "    Example: ./aws_get_services.ps1 -tagName service-id"
+    Write-Host "    Example: ./aws_get_services.ps1 -t service-id"
 	return
 }
 
@@ -110,22 +105,32 @@ else {
 }
 
 # Prompt for name if not specified
-if ($resourceGroupName -eq "") {
-	$resourceGroupName = Read-Host "Enter the name of the resource group"
+if ($serviceFamilyName -eq "") {
+	$serviceFamilyName = Read-Host "Enter the name of the service family"
 }
-$resourceGroupName = $resourceGroupName.ToLower()
+$serviceFamilyName = $serviceFamilyName.ToLower()
 
-# Prompt for name if not specified
-if ($tagName -eq "") {
-	$tagName = Read-Host "Enter the name of the tag"
+$expectedGroupName = $serviceFamilyName + "-list"
+
+$resourceGroups = Get-RGGroupList
+$groupArn = ""
+
+foreach($r in $resourceGroups) {
+    if($r.GroupName -eq $expectedGroupName) {
+        $groupArn = $r.GroupArn
+    }
 }
-$tagName = $tagName.ToLower()
+
+if($groupArn -eq "") {
+    # Resource group doesn't exist yet
+    .\aws_create_resourcegroup.ps1 -name $expectedGroupName -description "created for querying services" -tags "service-family" -tagValues $serviceFamilyName
+}
 
 $resourceGroup = Get-RGGroup -GroupName $resourceGroupName
 
 $resources = Get-RGGroupResourceList -GroupName $resourceGroupName
 
-$families = @()
+$services = @()
 
 foreach($resource in $resources.ResourceIdentifiers) {
 
@@ -135,7 +140,7 @@ foreach($resource in $resources.ResourceIdentifiers) {
         
         foreach($tag in $tags) {
             if($tag.Key -eq $tagName) {
-                $families = $families + $tag.Value
+                $services += $tag.Value
             }
         }
 
@@ -145,7 +150,7 @@ foreach($resource in $resources.ResourceIdentifiers) {
             $tags = $group.Tags
             foreach($tag in $tags) {
                 if($tag.Key -eq $tagName) {
-                    $families = $families + $tag.Value
+                    $services += $tag.Value
                 }
             }
         }
@@ -155,7 +160,7 @@ foreach($resource in $resources.ResourceIdentifiers) {
         
         foreach($tag in $tags) {
             if($tag.Key -eq $tagName) {
-                $families = $families + $tag.Value
+                $services += $tag.Value
             }
         }
     } elseif($resource.ResourceType -eq "AWS::ECS::Task") {
@@ -163,7 +168,7 @@ foreach($resource in $resources.ResourceIdentifiers) {
         
         foreach($tag in $tags) {
             if($tag.Key -eq $tagName) {
-                $families = $families + $tag.Value
+                $services += $tag.Value
             }
         }
     } elseif($resource.ResourceType -eq "AWS::ECS::TaskDefinition") {
@@ -171,7 +176,7 @@ foreach($resource in $resources.ResourceIdentifiers) {
         
         foreach($tag in $tags) {
             if($tag.Key -eq $tagName) {
-                $families = $families + $tag.Value
+                $services += $tag.Value
             }
         }
     } elseif($resource.ResourceType -eq "AWS::ECR::Repository") {
@@ -179,7 +184,7 @@ foreach($resource in $resources.ResourceIdentifiers) {
         
         foreach($tag in $tags) {
             if($tag.Key -eq $tagName) {
-                $families = $families + $tag.Value
+                $services += $tag.Value
             }
         }
     } elseif($resource.ResourceType -eq "AWS::RDS::DBInstance") {
@@ -187,7 +192,7 @@ foreach($resource in $resources.ResourceIdentifiers) {
         
         foreach($tag in $tags) {
             if($tag.Key -eq $tagName) {
-                $families = $families + $tag.Value
+                $services += $tag.Value
             }
         }
     } elseif($resource.ResourceType -eq "AWS::S3::Bucket") {
@@ -195,7 +200,7 @@ foreach($resource in $resources.ResourceIdentifiers) {
         
         foreach($tag in $tags) {
             if($tag.Key -eq $tagName) {
-                $families = $families + $tag.Value
+                $services += $tag.Value
             }
         }
     } elseif($resource.ResourceType -eq "AWS::EFS::FileSystem") {
@@ -203,11 +208,10 @@ foreach($resource in $resources.ResourceIdentifiers) {
         
         foreach($tag in $tags) {
             if($tag.Key -eq $tagName) {
-                $families = $families + $tag.Value
+                $services += $tag.Value
             }
         }
     }
 }
 
-$families | Sort-Object | Get-Unique
-
+$services | Sort-Object | Get-Unique
