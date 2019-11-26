@@ -115,9 +115,4 @@ foreach($resource in $resources) {
     }
 }
 
-$result = @{
-    Tag=$tagName;
-    Values = ($values | Sort-Object | Get-Unique);
-}
-
-return ([PSCustomObject]$result)
+return ($values | Sort-Object | Get-Unique);

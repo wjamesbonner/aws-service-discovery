@@ -32,6 +32,9 @@ if ($help) {
 	return
 }
 
+# navigate to library root
+cd $PSScriptRoot
+
 # load necessary modules
 .\aws_load_default_modules.ps1
 
@@ -46,8 +49,6 @@ if ($tagName -eq "") {
 	$tagName = Read-Host "Enter the name of the tag"
 }
 $tagName = $tagName.ToLower()
-
-$resourceGroup = Get-RGGroup -GroupName $resourceGroupName
 
 $resources = Get-RGGroupResourceList -GroupName $resourceGroupName
 

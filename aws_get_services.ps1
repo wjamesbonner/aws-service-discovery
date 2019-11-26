@@ -2,6 +2,9 @@ param(
     [Alias("s")]
     [string] $serviceFamilyName = "",
 
+    [Alias("f")]
+    [string] $familyTagName = "service-family",
+
     [Alias("t")]
     [string] $tagName = "service-id",
 
@@ -23,6 +26,14 @@ if ($help) {
     Write-Host "    Example: ./aws_get_services.ps1 -s `"wp-containers`""
 
     Write-Host ""
+	Write-Host "familyTagName"
+	Write-Host "    The name of the tag used to identify the service family."
+	Write-Host ("    Default: {0}" -f $tagName)
+    Write-Host "    Alias: t"
+	Write-Host "    Example: ./aws_get_services.ps1 -tagName service-id"
+    Write-Host "    Example: ./aws_get_services.ps1 -t service-id"
+
+    Write-Host ""
 	Write-Host "tagName"
 	Write-Host "    The name of the tag used to identify services."
 	Write-Host ("    Default: {0}" -f $tagName)
@@ -31,6 +42,9 @@ if ($help) {
     Write-Host "    Example: ./aws_get_services.ps1 -t service-id"
 	return
 }
+
+# navigate to library root
+cd $PSScriptRoot
 
 # load necessary modules
 .\aws_load_default_modules.ps1
@@ -53,10 +67,10 @@ foreach($r in $resourceGroups) {
 
 if($groupArn -eq "") {
     # Resource group doesn't exist yet
-    .\aws_create_resourcegroup.ps1 -name $expectedGroupName -description "created for querying services" -tags "service-family" -tagValues $serviceFamilyName
+    .\aws_create_resourcegroup.ps1 -name $expectedGroupName -description "created for querying services" -tags $familyTagName -tagValues $serviceFamilyName
 }
 
-$resourceGroup = Get-RGGroup -GroupName $resourceGroupName
-$resources = Get-RGGroupResourceList -GroupName $resourceGroupName
+# Get the resources in the group
+$resources = Get-RGGroupResourceList -GroupName $expectedGroupName
 
 .\aws_get_tag_values.ps1 -resources $resources.ResourceIdentifiers -tagName $tagName

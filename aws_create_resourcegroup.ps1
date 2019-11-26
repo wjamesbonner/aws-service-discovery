@@ -86,6 +86,9 @@ if ($help) {
 	return
 }
 
+# navigate to library root
+cd $PSScriptRoot
+
 # Check for necessary module
 if (Get-Module -ListAvailable -Name AWS.Tools.ResourceGroups) {
     Import-Module AWS.Tools.ResourceGroups
