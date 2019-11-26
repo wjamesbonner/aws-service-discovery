@@ -29,11 +29,6 @@ if ($help) {
     Write-Host "    Alias: t"
 	Write-Host "    Example: ./aws_get_service_familes.ps1 -tagName service-family"
     Write-Host "    Example: ./aws_get_service_familes.ps1 -t service-family"
-
-    Write-Host ""
-    Write-Host "Supported resources:"
-
-
 	return
 }
 
@@ -56,89 +51,4 @@ $resourceGroup = Get-RGGroup -GroupName $resourceGroupName
 
 $resources = Get-RGGroupResourceList -GroupName $resourceGroupName
 
-$families = @()
-
-foreach($resource in $resources.ResourceIdentifiers) {
-
-    if($resource.ResourceType -eq "AWS::EC2::Instance") {
-        $result = Get-EC2Instance -InstanceId $resource.ResourceArn.Split("/")[1]
-        $tags = $result.Instances[0].Tags
-        
-        foreach($tag in $tags) {
-            if($tag.Key -eq $tagName) {
-                $families = $families + $tag.Value
-            }
-        }
-
-        $sgs = $result.Instances[0].SecurityGroups
-        foreach($sg in $sgs) {
-            $group = Get-EC2SecurityGroup -GroupId $sg.GroupId
-            $tags = $group.Tags
-            foreach($tag in $tags) {
-                if($tag.Key -eq $tagName) {
-                    $families = $families + $tag.Value
-                }
-            }
-        }
-
-    } elseif($resource.ResourceType -eq "AWS::ECS::Cluster") {
-        $tags = Get-ECSTagsForResource -ResourceArn $resource.ResourceArn
-        
-        foreach($tag in $tags) {
-            if($tag.Key -eq $tagName) {
-                $families = $families + $tag.Value
-            }
-        }
-    } elseif($resource.ResourceType -eq "AWS::ECS::Task") {
-        $tags = Get-ECSTagsForResource -ResourceArn $resource.ResourceArn
-        
-        foreach($tag in $tags) {
-            if($tag.Key -eq $tagName) {
-                $families = $families + $tag.Value
-            }
-        }
-    } elseif($resource.ResourceType -eq "AWS::ECS::TaskDefinition") {
-        $tags = Get-ECSTagsForResource -ResourceArn $resource.ResourceArn
-        
-        foreach($tag in $tags) {
-            if($tag.Key -eq $tagName) {
-                $families = $families + $tag.Value
-            }
-        }
-    } elseif($resource.ResourceType -eq "AWS::ECR::Repository") {
-        $tags = Get-ECRResourceTag -ResourceArn $resource.ResourceArn
-        
-        foreach($tag in $tags) {
-            if($tag.Key -eq $tagName) {
-                $families = $families + $tag.Value
-            }
-        }
-    } elseif($resource.ResourceType -eq "AWS::RDS::DBInstance") {
-        $tags = Get-RDSTagForResource -ResourceName $resource.ResourceArn
-        
-        foreach($tag in $tags) {
-            if($tag.Key -eq $tagName) {
-                $families = $families + $tag.Value
-            }
-        }
-    } elseif($resource.ResourceType -eq "AWS::S3::Bucket") {
-        $tags = Get-S3BucketTagging -BucketName $resource.ResourceArn.Split(":")[$resource.ResourceArn.Split(":").Count-1]
-        
-        foreach($tag in $tags) {
-            if($tag.Key -eq $tagName) {
-                $families = $families + $tag.Value
-            }
-        }
-    } elseif($resource.ResourceType -eq "AWS::EFS::FileSystem") {
-        $tags = Get-EFSTag -FileSystemId $resource.ResourceArn.Split("/")[1]
-        
-        foreach($tag in $tags) {
-            if($tag.Key -eq $tagName) {
-                $families = $families + $tag.Value
-            }
-        }
-    }
-}
-
-$families | Sort-Object | Get-Unique
-
+.\aws_get_tag_values.ps1 -resources $resources.ResourceIdentifiers -tagName $tagName
