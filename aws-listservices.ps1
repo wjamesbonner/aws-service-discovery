@@ -1,12 +1,12 @@
 param(
     [Alias("s")]
-    [string] $serviceFamilyName = "",
+    [string] $serviceFamily = "",
 
     [Alias("f")]
-    [string] $familyTagName = "service-family",
+    [string] $serviceFamilyTagName = "service-family",
 
     [Alias("t")]
-    [string] $tagName = "service-id",
+    [string] $serviceIdTagName = "service-id",
 
     [Alias("h")]
     [switch] $help = $false
@@ -50,27 +50,26 @@ cd $PSScriptRoot
 .\aws_load_default_modules.ps1
 
 # Prompt for name if not specified
-if ($serviceFamilyName -eq "") {
-	$serviceFamilyName = Read-Host "Enter the name of the service family"
+if ($serviceFamily -eq "") {
+	$serviceFamily = Read-Host "Enter the name of the service family, or blank for all."
 }
-$serviceFamilyName = $serviceFamilyName.ToLower()
+$serviceFamily = $serviceFamily.ToLower()
 
-$expectedGroupName = $serviceFamilyName + "-list"
-$resourceGroups = Get-RGGroupList
-$groupArn = ""
+$resourceGroupName = $serviceFamily + "-list"
 
-foreach($r in $resourceGroups) {
-    if($r.GroupName -eq $expectedGroupName) {
-        $groupArn = $r.GroupArn
-    }
-}
-
-if($groupArn -eq "") {
-    # Resource group doesn't exist yet
-    .\aws_create_resourcegroup.ps1 -name $expectedGroupName -description "created for querying services" -tags $familyTagName -tagValues $serviceFamilyName
+try {
+    $resources = Get-RGGroupResourceList -GroupName $resourceGroupName
+} catch {
+    Write-Debug "`t Resource group doesn't exist, will create new RG."
+    $tags = @($serviceFamilyTagName)
+    $tagValues = @($serviceFamily)
+    $result = .\aws_create_resourcegroup.ps1 -name $resourceGroupName -description "created for querying service resources" -tags $tags -tagValues $tagValues
+    $resources = Get-RGGroupResourceList -GroupName $resourceGroupName
 }
 
-# Get the resources in the group
-$resources = Get-RGGroupResourceList -GroupName $expectedGroupName
+if($resources -eq $null) {
+    Write-Debug "`t Failed to find or create RG."
+    return $false
+}
 
-.\aws_get_tag_values.ps1 -resources $resources.ResourceIdentifiers -tagName $tagName
+return .\aws_get_tag_values.ps1 -resources $resources.ResourceIdentifiers -tagName $serviceIdTagName

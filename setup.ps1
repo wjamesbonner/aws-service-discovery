@@ -138,6 +138,17 @@ if (!(Get-Module -ListAvailable -Name AWS.Tools.ElasticFileSystem) -or $force) {
     $changesMade = $true
 }
 
+# Check for modules required by this library
+if (!(Get-Module -ListAvailable -Name AWS.Tools.ElasticLoadBalancingV2) -or $force) {
+    if($force) {
+        Install-Module -Name AWS.Tools.ElasticLoadBalancingV2 -AllowClobber -Force -Confirm
+    } else {
+        Install-Module -Name AWS.Tools.ElasticLoadBalancingV2
+    }
+
+    $changesMade = $true
+}
+
 if($changesMade) {
     Write-Host "Modules successfully installed and updated."
 }else {

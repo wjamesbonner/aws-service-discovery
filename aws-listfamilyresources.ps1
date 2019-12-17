@@ -19,7 +19,7 @@ if ($help) {
 	Write-Host "    The name of the service family to query."
 	Write-Host "    Default: "
     Write-Host "    Alias: s"
-	Write-Host "    Example: ./aws_get_service_resources.ps1 -serviceId `"n91bet54`""
+	Write-Host "    Example: ./aws_get_service_resources.ps1 -serviceFamily `"n91bet54`""
     Write-Host "    Example: ./aws_get_service_resources.ps1 -s `"n91bet54`""
 
     Write-Host ""
@@ -43,22 +43,21 @@ if ($serviceFamily -eq "") {
 	$serviceFamily = Read-Host "Enter the name of the service family"
 }
 $serviceFamily = $serviceFamily.ToLower()
+$resourceGroupName = $serviceFamily + "-list"
 
-$expectedGroupName = $serviceFamily + "-list"
-$resourceGroups = Get-RGGroupList
-$groupArn = ""
-
-foreach($r in $resourceGroups) {
-    if($r.GroupName -eq $expectedGroupName) {
-        $groupArn = $r.GroupArn
-    }
+try {
+    $resources = Get-RGGroupResourceList -GroupName $resourceGroupName
+} catch {
+    Write-Debug "`t Resource group doesn't exist, will create new RG."
+    $tags = @($tagName)
+    $tagValues = @("$null")
+    $result = .\aws_create_resourcegroup.ps1 -name $resourceGroupName -description "created for querying service resources" -tags $tagName -tagValues $serviceFamily
+    $resources = Get-RGGroupResourceList -GroupName $resourceGroupName
 }
 
-if($groupArn -eq "") {
-    # Resource group doesn't exist yet
-    .\aws_create_resourcegroup.ps1 -name $expectedGroupName -description "created for querying service resources" -tags $tagName -tagValues $serviceId
+if($resources -eq $null) {
+    Write-Debug "`t Failed to find or create RG."
+    return $false
 }
-
-$resources = Get-RGGroupResourceList -GroupName $expectedGroupName
 
 return $resources.ResourceIdentifiers;

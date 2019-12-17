@@ -43,22 +43,21 @@ if ($serviceId -eq "") {
 	$serviceId = Read-Host "Enter the id of the service"
 }
 $serviceId = $serviceId.ToLower()
+$resourceGroupName = $serviceId + "-list"
 
-$expectedGroupName = $serviceId + "-list"
-$resourceGroups = Get-RGGroupList
-$groupArn = ""
-
-foreach($r in $resourceGroups) {
-    if($r.GroupName -eq $expectedGroupName) {
-        $groupArn = $r.GroupArn
-    }
+try {
+    $resources = Get-RGGroupResourceList -GroupName $resourceGroupName
+} catch {
+    Write-Debug "`t Resource group doesn't exist, will create new RG."
+    $tags = @($tagName)
+    $tagValues = @($serviceId)
+    $result = .\aws_create_resourcegroup.ps1 -name $resourceGroupName -description "created for querying service resources" -tags $tags -tagValues $tagValues
+    $resources = Get-RGGroupResourceList -GroupName $resourceGroupName
 }
 
-if($groupArn -eq "") {
-    # Resource group doesn't exist yet
-    .\aws_create_resourcegroup.ps1 -name $expectedGroupName -description "created for querying service resources" -tags $tagName -tagValues $serviceId
+if($resources -eq $null) {
+    Write-Debug "`t Failed to find or create RG."
+    return $false
 }
-
-$resources = Get-RGGroupResourceList -GroupName $expectedGroupName
 
 return $resources.ResourceIdentifiers;

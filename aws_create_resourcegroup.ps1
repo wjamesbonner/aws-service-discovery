@@ -6,13 +6,13 @@
     [string] $description = "",
 
     [Alias("rt")]
-    [String[]] $resourceTypes = @("AWS::EC2::Instance", "AWS::EC2::SecurityGroup", "AWS::ECS::Cluster", "AWS::ECS::Task", "AWS::ECS::TaskDefinition", "AWS::ECR::Repository", "AWS::RDS::DBInstance", "AWS::S3::Bucket", "AWS::EFS::FileSystem"),
+    [String[]] $resourceTypes = @("AWS::AllSupported"),
 
     [Alias("t")]
-    [String[]] $tags = @("created-by"),
+    [String[]] $tags = @(""),
 
     [Alias("tv")]
-    [String[]] $tagValues = @("aws-create-resourcegroup"),
+    [String[]] $tagValues = @(""),
 
     [Alias("q")]
     [String] $query = "",
@@ -116,19 +116,19 @@ if ($description -eq "") {
 }
 $description = $description.ToLower()
 
-# Build an array of resource types to filter on
-$resourceTypeFilters = @()
-foreach($resourceType in $resourceTypes) {
-    $resourceTypeFilters += $resourceType
-}
-
 # Build array of tags and values to filter on
 $tagFilters = @()
 for($i = 0; $i -le $tags.Count-1;$i++){
     # Create hashtable with the required AWS structure for tag filters
-    $tagFilterHashtable = @{
-        Key = $tags[$i].ToLower();
-        Values = @($tagValues[$i].ToLower());
+    if($tagValues[$i] -ne "") {
+        $tagFilterHashtable = @{
+            Key = $tags[$i].ToLower();
+            Values = @($tagValues[$i].ToLower());
+        }
+    } else {
+        $tagFilterHashtable = @{
+            Key = $tags[$i].ToLower();
+        }
     }
 
     # Cast hashtable to PS object, and add to filter array
